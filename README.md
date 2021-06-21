@@ -1,5 +1,5 @@
-# RLkit
-Reinforcement learning framework and algorithms implemented in PyTorch.
+# RLkit-PyBullet
+Reinforcement learning framework and algorithms implemented in PyTorch. MuJoCo simulator is replaced by the open-source PyBullet simulator.
 
 Implemented algorithms:
  - Skew-Fit
