@@ -1,4 +1,8 @@
-from gym.envs.mujoco import HalfCheetahEnv
+import gym
+import pybulletgym
+
+ENVS = {'HalfCheetahPyBulletEnv-v0', 'HopperPyBulletEnv-v0',
+        'AntPyBulletEnv-v0', 'Walker2DPyBulletEnv-v0'}
 
 import rlkit.torch.pytorch_util as ptu
 from rlkit.data_management.env_replay_buffer import EnvReplayBuffer
@@ -11,9 +15,10 @@ from rlkit.torch.networks import ConcatMlp
 from rlkit.torch.torch_rl_algorithm import TorchBatchRLAlgorithm
 
 
-def experiment(variant):
-    expl_env = NormalizedBoxEnv(HalfCheetahEnv())
-    eval_env = NormalizedBoxEnv(HalfCheetahEnv())
+def experiment(variant, args):
+    env = gym.make(args.env)
+    expl_env = NormalizedBoxEnv(env)
+    eval_env = NormalizedBoxEnv(env)
     obs_dim = expl_env.observation_space.low.size
     action_dim = eval_env.action_space.low.size
 
@@ -43,7 +48,9 @@ def experiment(variant):
         action_dim=action_dim,
         hidden_sizes=[M, M],
     )
-    eval_policy = MakeDeterministic(policy)
+
+    # For sampling, we shouod use stochastic policy instead
+    eval_policy = MakeDeterministic(policy) if not args.eval else policy
     eval_path_collector = MdpPathCollector(
         eval_env,
         eval_policy,
@@ -65,6 +72,7 @@ def experiment(variant):
         target_qf2=target_qf2,
         **variant['trainer_kwargs']
     )
+
     algorithm = TorchBatchRLAlgorithm(
         trainer=trainer,
         exploration_env=expl_env,
@@ -75,21 +83,37 @@ def experiment(variant):
         **variant['algorithm_kwargs']
     )
     algorithm.to(ptu.device)
+
+    # if args.eval:
+    #     print('Genearting model rollouts...')
+    #     algorithm.eval()
+    # else:
+    #     algorithm.train()
+
     algorithm.train()
-
-
-
 
 if __name__ == "__main__":
     # noinspection PyTypeChecker
+
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--exp_name', default='debug')
+    parser.add_argument('--env', choices=ENVS, default='HopperPyBulletEnv-v0')
+    parser.add_argument('--eval', action='store_true', default=False)
+    parser.add_argument('--eval_epoch', type=int, default=0)
+    parser.add_argument('--num_eval_steps', type=int, default=5000)
+    parser.add_argument('--model_path', type=str, default='/mnt/efs/Projects/rlkit-pybullet/data/offline-data/offline_data_2021_06_21_21_33_07_0000--s-0')
+    args = parser.parse_args()
+
     variant = dict(
         algorithm="SAC",
         version="normal",
         layer_size=256,
         replay_buffer_size=int(1E6),
+        env_name = args.env,
         algorithm_kwargs=dict(
             num_epochs=3000,
-            num_eval_steps_per_epoch=5000,
+            num_eval_steps_per_epoch=args.num_eval_steps,
             num_trains_per_train_loop=1000,
             num_expl_steps_per_train_loop=1000,
             min_num_steps_before_training=1000,
@@ -106,6 +130,6 @@ if __name__ == "__main__":
             use_automatic_entropy_tuning=True,
         ),
     )
-    setup_logger('name-of-experiment', variant=variant)
-    # ptu.set_gpu_mode(True)  # optionally set the GPU (default=False)
-    experiment(variant)
+    setup_logger(args.exp_name, variant=variant, snapshot_gap=50, snapshot_mode='gap')
+    ptu.set_gpu_mode(True)  # optionally set the GPU (default=False)
+    experiment(variant, args)

@@ -80,5 +80,26 @@ class BatchRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
                     self.trainer.train(train_data)
                 gt.stamp('training', unique=False)
                 self.training_mode(False)
-
+            
             self._end_epoch(epoch)
+
+    def _eval(self):
+        '''
+        Generate rollouts from model. 
+        '''
+        self.eval_data_collector.end_epoch(-1)
+        self.eval_data_collector.collect_new_paths(
+                self.max_path_length,
+                self.num_eval_steps_per_epoch,
+                discard_incomplete_paths=False,
+            )
+
+        # init_expl_paths = self.expl_data_collector.collect_new_paths(
+        #     self.max_path_length,
+        #     self.min_num_steps_before_training,
+        #     discard_incomplete_paths=False,
+        # )
+        # self.replay_buffer.add_paths(init_expl_paths)
+        # self.expl_data_collector.end_epoch(-1)
+
+        import pdb; pdb.set_trace()

@@ -8,6 +8,7 @@ from rlkit.core.loss import LossFunction, LossStatistics
 from torch import nn as nn
 
 import rlkit.torch.pytorch_util as ptu
+from rlkit.util.offline import load_params
 from rlkit.core.eval_util import create_stats_ordered_dict
 from rlkit.torch.torch_rl_algorithm import TorchTrainer
 from rlkit.core.logging import add_prefix
@@ -91,6 +92,8 @@ class SACTrainer(TorchTrainer, LossFunction):
         self._n_train_steps_total = 0
         self._need_to_update_eval_statistics = True
         self.eval_statistics = OrderedDict()
+
+    # def load_model(self, )
 
     def train_from_torch(self, batch):
         gt.blank_stamp()
@@ -262,3 +265,9 @@ class SACTrainer(TorchTrainer, LossFunction):
             target_qf1=self.target_qf1,
             target_qf2=self.target_qf2,
         )
+
+    def load_snapshot(self, path, step=0):
+        params = load_params(path, step)
+        self.policy.load_state_dict(params['trainer/policy'].state_dict())
+        self.qf1.load_state_dict(params['trainer/qf1'].state_dict())
+        self.qf2.load_state_dict(params['trainer/qf2'].state_dict())

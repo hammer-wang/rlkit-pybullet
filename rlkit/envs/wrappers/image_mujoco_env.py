@@ -1,6 +1,6 @@
 from collections import deque
 
-import mujoco_py
+# import mujoco_py
 import numpy as np
 import torch
 from PIL import Image

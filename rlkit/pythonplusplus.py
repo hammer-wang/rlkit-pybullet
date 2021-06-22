@@ -162,8 +162,13 @@ def list_of_dicts__to__dict_of_lists(lst):
     keys = lst[0].keys()
     output_dict = collections.defaultdict(list)
     for d in lst:
-        assert set(d.keys()) == set(keys), (d.keys(), keys)
+        # if set(d.keys()) != set(keys):
+        #     import pdb; pdb.set_trace()
+        # assert set(d.keys()) == set(keys), (d.keys(), keys)
         for k in keys:
+            if k == 'TimeLimit.truncated': # added by Gym when the path exceeds
+                # the time limit, we will ignore it here
+                continue
             output_dict[k].append(d[k])
     return output_dict
 

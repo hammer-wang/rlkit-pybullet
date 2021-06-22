@@ -45,6 +45,12 @@ class BaseRLAlgorithm(object, metaclass=abc.ABCMeta):
         self._start_epoch = start_epoch
         self._train()
 
+    def eval(self):
+        self._eval()
+
+    def _eval(self):
+        raise NotImplementedError('_eval must implemented by inherited class')
+
     def _train(self):
         """
         Train model.
@@ -52,6 +58,9 @@ class BaseRLAlgorithm(object, metaclass=abc.ABCMeta):
         raise NotImplementedError('_train must implemented by inherited class')
 
     def _end_epoch(self, epoch):
+        '''
+        This function will be called at the end of each training epoch.
+        '''
         snapshot = self._get_snapshot()
         logger.save_itr_params(epoch, snapshot)
         gt.stamp('saving')
