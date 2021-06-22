@@ -45,8 +45,8 @@ class BaseRLAlgorithm(object, metaclass=abc.ABCMeta):
         self._start_epoch = start_epoch
         self._train()
 
-    def eval(self):
-        self._eval()
+    def eval(self, save_path):
+        self._eval(save_path)
 
     def _eval(self):
         raise NotImplementedError('_eval must implemented by inherited class')

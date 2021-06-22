@@ -4,6 +4,7 @@ import gtimer as gt
 from rlkit.core.rl_algorithm import BaseRLAlgorithm
 from rlkit.data_management.replay_buffer import ReplayBuffer
 from rlkit.samplers.data_collector import PathCollector
+import pickle as pkl
 
 
 class BatchRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
@@ -83,23 +84,15 @@ class BatchRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
             
             self._end_epoch(epoch)
 
-    def _eval(self):
+    def _eval(self, save_path):
         '''
         Generate rollouts from model. 
         '''
         self.eval_data_collector.end_epoch(-1)
-        self.eval_data_collector.collect_new_paths(
+        paths = self.eval_data_collector.collect_new_paths(
                 self.max_path_length,
                 self.num_eval_steps_per_epoch,
                 discard_incomplete_paths=False,
             )
 
-        # init_expl_paths = self.expl_data_collector.collect_new_paths(
-        #     self.max_path_length,
-        #     self.min_num_steps_before_training,
-        #     discard_incomplete_paths=False,
-        # )
-        # self.replay_buffer.add_paths(init_expl_paths)
-        # self.expl_data_collector.end_epoch(-1)
-
-        import pdb; pdb.set_trace()
+        pkl.dump(paths, open(save_path, 'wb'))

@@ -13,6 +13,8 @@ from rlkit.torch.sac.policies import TanhGaussianPolicy, MakeDeterministic
 from rlkit.torch.sac.sac import SACTrainer
 from rlkit.torch.networks import ConcatMlp
 from rlkit.torch.torch_rl_algorithm import TorchBatchRLAlgorithm
+import torch
+import os
 
 
 def experiment(variant, args):
@@ -49,6 +51,11 @@ def experiment(variant, args):
         hidden_sizes=[M, M],
     )
 
+    if args.eval:
+        policy.load_state_dict(torch.load(os.path.join(args.model_path, 'policy_{}.pth'.format(args.eval_epoch))))
+        qf1.load_state_dict(torch.load(os.path.join(args.model_path, 'qf1_{}.pth'.format(args.eval_epoch))))
+        qf2.load_state_dict(torch.load(os.path.join(args.model_path, 'qf2_{}.pth'.format(args.eval_epoch))))
+
     # For sampling, we shouod use stochastic policy instead
     eval_policy = MakeDeterministic(policy) if not args.eval else policy
     eval_path_collector = MdpPathCollector(
@@ -84,13 +91,12 @@ def experiment(variant, args):
     )
     algorithm.to(ptu.device)
 
-    # if args.eval:
-    #     print('Genearting model rollouts...')
-    #     algorithm.eval()
-    # else:
-    #     algorithm.train()
-
-    algorithm.train()
+    if args.eval:
+        print('Genearting model rollouts...')
+        save_path = os.path.join(args.model_path, "traj_sample_{}.pkl".format(args.eval_epoch))
+        algorithm.eval(save_path)
+    else:
+        algorithm.train()
 
 if __name__ == "__main__":
     # noinspection PyTypeChecker
